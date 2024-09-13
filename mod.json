@@ -1,0 +1,57 @@
+{
+	"geode": "3.5.0",
+	"gd": {
+		"win": "2.206",
+		"android": "2.206",
+		"mac": "2.206"
+	},
+	"id": "sawblade.dim_mode",
+	"name": "Dim Level",
+	"version": "v1.0.0",
+	"developer": "Sawblade",
+	"description": "Dims the screen while playing a level.",
+	"settings": {
+		"enable-overlay": {
+			"name": "Enable Dim Overlay",
+			"description": "Enables the overlay that dims the screen.",
+			"type": "bool",
+			"default": true
+		},
+		"set-opacity": {
+			"name": "Set Opacity (%)",
+			"description": "Sets the dimness of the screen.",
+			"type": "int",
+			"default": 50,
+			"min": 0,
+			"max": 100,
+			"control": {
+                "slider": true
+            }
+		},
+		"overlay-color": {
+		"type": "rgb",
+		"name": "Overlay Color",
+		"description": "Sets the color of the screen overlay.",
+		"default": "#000000"
+		},
+		"show-opacity-button": {
+			"name": "Show Settings Button",
+			"description": "Shows the mod settings button in the pause menu settings.",
+			"type": "bool",
+			"default": true
+		}
+	},
+	"dependencies": [
+        {
+            "id": "geode.node-ids",
+            "version": ">=v1.13.2",
+            "importance": "required"
+        }
+    ],
+	"tags": [
+		"gameplay",
+		"offline",
+		"utility",
+		"customization"
+	]
+}
