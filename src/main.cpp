@@ -51,8 +51,10 @@ class $modify (dimSettings, PauseLayer) {
 $execute {
     geode::listenForSettingChanges("set-opacity", +[](int64_t  value) {
         if (auto pl = PlayLayer::get()) {
+            if (Mod::get()->getSettingValue<bool>("enable-overlay")) {
             auto overlay = static_cast<CCLayerColor*>(pl->getChildByID("dimOverlay"_spr));
             overlay->setOpacity(value * 2.55);
+            }
         }
    });
    geode::listenForSettingChanges("overlay-color", +[](ccColor3B value) {
