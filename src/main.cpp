@@ -4,8 +4,6 @@
 #include <Geode/ui/GeodeUI.hpp>
 #include <Geode/ui/BasedButtonSprite.hpp>
 #include <Geode/loader/SettingEvent.hpp>
-#include <Geode/modify/GameLevelOptionsLayer.hpp>
-#include <Geode/modify/LevelInfoLayer.hpp>
 
 using namespace geode::prelude;
 
@@ -29,8 +27,6 @@ class $modify (dimSettings, PauseLayer) {
         auto optionsLayer = typeinfo_cast<GameOptionsLayer*>(CCDirector::get()->getRunningScene()->getChildren()->lastObject());
         if (!optionsLayer) return;
         auto optionsMenu = getChildOfType<CCMenu>(optionsLayer->m_mainLayer, 1);
-        //CCMenu* menu = CCMenu::create();
-        //menu->setID("dimMenu"_spr);
         auto settingsSprite = CircleButtonSprite::createWithSpriteFrameName(
             "geode.loader/settings.png", 
             1.f, 
@@ -50,7 +46,6 @@ class $modify (dimSettings, PauseLayer) {
     void openSettings(CCObject* obj) {
         geode::openSettingsPopup(Mod::get());
     }
-
 };
 
 $execute {
@@ -77,5 +72,3 @@ $execute {
    });
 
 };
-
-// test 

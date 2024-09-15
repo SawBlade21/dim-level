@@ -1,11 +1,12 @@
 {
-	"geode": "3.5.0",
+	"geode": "3.6.1",
 	"gd": {
 		"win": "2.206",
 		"android": "2.206",
 		"mac": "2.206"
 	},
 	"id": "sawblade.dim_mode",
+	"repository": "https://github.com/SawBlade21/dim-level",
 	"name": "Dim Level",
 	"version": "v1.0.0",
 	"developer": "Sawblade",
@@ -44,7 +45,7 @@
 	"dependencies": [
         {
             "id": "geode.node-ids",
-            "version": ">=v1.13.2",
+            "version": ">=v1.14.0",
             "importance": "required"
         }
     ],
