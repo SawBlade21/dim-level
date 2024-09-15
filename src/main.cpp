@@ -72,5 +72,4 @@ $execute {
                 overlay->setOpacity(0);
         }
    });
-
 };
