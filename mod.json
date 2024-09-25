@@ -1,5 +1,5 @@
 {
-	"geode": "3.6.1",
+	"geode": "3.7.1",
 	"gd": {
 		"win": "2.206",
 		"android": "2.206",
@@ -15,6 +15,12 @@
 		"enable-overlay": {
 			"name": "Enable Dim Overlay",
 			"description": "Enables the overlay that dims the screen.",
+			"type": "bool",
+			"default": true
+		},
+		"show-opacity-button": {
+			"name": "Show Settings Button",
+			"description": "Shows the mod settings button in the pause menu settings.",
 			"type": "bool",
 			"default": true
 		},
@@ -35,12 +41,24 @@
 		"description": "Sets the color of the screen overlay.",
 		"default": "#000000"
 		},
-		"show-opacity-button": {
-			"name": "Show Settings Button",
-			"description": "Shows the mod settings button in the pause menu settings.",
+		"overlay-rgb": {
+			"name": "RGB",
+			"description": "Makes the overlay RGB.",
 			"type": "bool",
-			"default": true
+			"default": false
+		},
+		"rgb-speed": {
+			"name": "RGB Speed",
+			"description": "The speed of the overlay RGB.",
+			"type": "float",
+			"default": 1.5,
+			"min": 0.1,
+			"max": 3,
+			"control": {
+                "slider": true
+            }
 		}
+		
 	},
 	"dependencies": [
         {
