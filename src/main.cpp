@@ -7,16 +7,48 @@
 
 using namespace geode::prelude;
 
+void startRGB(PlayLayer* pl) {
+    if (auto overlay = pl->getChildByID("dimOverlay"_spr)) {
+        float speed = abs(Mod::get()->getSettingValue<double>("rgb-speed") - 3.f);
+
+        if (speed == 0.f)
+            speed = 0.01f;
+
+        auto red = CCTintTo::create(speed, 255, 0, 0);
+        auto green = CCTintTo::create(speed, 0, 255, 0);
+        auto blue = CCTintTo::create(speed, 0, 0, 255);
+
+        auto colorSequence = CCSequence::create(red, green, blue, nullptr);
+        auto repeatSequence = CCRepeatForever::create(colorSequence);
+
+        overlay->runAction(repeatSequence);
+    }
+}
+
+void stopRGB(PlayLayer* pl) {
+    if (auto overlay = pl->getChildByID("dimOverlay"_spr)) {
+        overlay->stopAllActions();
+        static_cast<CCLayerColor*>(overlay)->setColor(Mod::get()->getSettingValue<cocos2d::ccColor3B>("overlay-color"));
+    }
+}
+
 class $modify (PlayLayer) {
+
     void setupHasCompleted() {
         PlayLayer::setupHasCompleted();
         cocos2d::CCSize screenSize = CCDirector::sharedDirector()->getWinSize();
         auto opacity = (Mod::get()->getSettingValue<int64_t>("set-opacity") * 2.55);
-        if (!Mod::get()->getSettingValue<bool>("enable-overlay")) opacity = 0;
         auto color = Mod::get()->getSettingValue<ccColor3B>("overlay-color");
         cocos2d::CCLayerColor* overlay = CCLayerColor::create(ccc4(color.r, color.g, color.b, opacity), screenSize.width, screenSize.height);
         overlay->setID("dimOverlay"_spr);
-        this->addChild(overlay, 1000);
+
+        if (!Mod::get()->getSettingValue<bool>("enable-overlay"))
+            overlay->setVisible(false);
+
+        addChild(overlay, 1000);
+
+        if (Mod::get()->getSettingValue<bool>("overlay-rgb"))
+            startRGB(this);
     }
 };
 
@@ -65,11 +97,18 @@ $execute {
    });
    geode::listenForSettingChanges("enable-overlay", +[](bool  value) {
         if (auto pl = PlayLayer::get()) {
-            auto overlay = static_cast<CCLayerColor*>(pl->getChildByID("dimOverlay"_spr));
-            if (value == true) 
-                overlay->setOpacity(Mod::get()->getSettingValue<int64_t>("set-opacity") * 2.55);
-            else
-                overlay->setOpacity(0);
+            if (auto overlay = static_cast<CCLayerColor*>(pl->getChildByID("dimOverlay"_spr)))
+                overlay->setVisible(value);
+        }
+   });
+   geode::listenForSettingChanges("overlay-rgb", +[](bool  value) {
+        if (auto pl = PlayLayer::get())
+            value ? startRGB(pl) : stopRGB(pl);
+   });
+   geode::listenForSettingChanges("rgb-speed", +[](double  value) {
+        if (auto pl = PlayLayer::get()) {
+            stopRGB(pl);
+            startRGB(pl);
         }
    });
 };
