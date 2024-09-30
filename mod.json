@@ -8,7 +8,7 @@
 	"id": "sawblade.dim_mode",
 	"repository": "https://github.com/SawBlade21/dim-level",
 	"name": "Dim Level",
-	"version": "v1.0.0",
+	"version": "v1.0.1",
 	"developer": "Sawblade",
 	"description": "Dims the screen while playing a level.",
 	"settings": {
