@@ -4,8 +4,11 @@
 #include <Geode/ui/GeodeUI.hpp>
 #include <Geode/ui/BasedButtonSprite.hpp>
 #include <Geode/loader/SettingEvent.hpp>
+#include <geode.custom-keybinds/include/Keybinds.hpp>
 
 using namespace geode::prelude;
+
+auto mod = Mod::get();
 
 float getDimFactor() {
     float dimFactor = abs((Mod::get()->getSettingValue<int64_t>("set-opacity") / 100.f) - 1);
@@ -41,12 +44,52 @@ void createRGB(bool enable, float speed, CCLayerColor* overlay) {
     else {
         overlay->stopAllActions();
         auto overlayColor = Mod::get()->getSettingValue<ccColor3B>("overlay-color");
-        overlayColor.r *= dimFactor;
-        overlayColor.g *= dimFactor;
-        overlayColor.b *= dimFactor;
-        overlay->setColor(overlayColor);
+        overlay->runAction(CCTintTo::create(0.5f, overlayColor.r * dimFactor, overlayColor.g * dimFactor, overlayColor.b * dimFactor));
     }
 }
+
+void updateOpacityLabel() {
+    auto label = static_cast<CCLabelBMFont*>(PlayLayer::get()->getChildByID("opacityLabel"_spr));
+    auto opacity = Mod::get()->getSettingValue<int64_t>("set-opacity");
+    label->setString(fmt::format("Opacity: {}", opacity).c_str());
+
+    label->stopAllActions();
+    auto delay = CCDelayTime::create(0.5f);
+    auto fadeIn = CCFadeTo::create(0.25f, 128);
+    auto fadeOut = CCFadeTo::create(0.25f, 0);
+    auto sequence = CCSequence::create(fadeIn, delay, fadeOut, nullptr);
+    label->runAction(sequence);
+}
+
+class $modify (dimSettings, PauseLayer) {
+    void onSettings(CCObject* sender) {
+        PauseLayer::onSettings(sender);
+        if (!Mod::get()->getSettingValue<bool>("show-opacity-button")) return;
+        auto optionsLayer = typeinfo_cast<GameOptionsLayer*>(CCDirector::get()->getRunningScene()->getChildren()->lastObject());
+        if (!optionsLayer) return;
+        auto optionsMenu = getChildOfType<CCMenu>(optionsLayer->m_mainLayer, 1);
+        auto settingsSprite = CircleButtonSprite::createWithSpriteFrameName(
+            "geode.loader/settings.png", 
+            1.f, 
+            CircleBaseColor::DarkPurple, 
+            CircleBaseSize::Small
+        );
+        settingsSprite->setScale(0.75);
+        auto settingsButton = CCMenuItemSpriteExtra::create(settingsSprite, this, menu_selector(dimSettings::openSettings));
+        settingsButton->setPosition({146, 119});
+        auto text = CCLabelBMFont::create("Dim", "bigFont.fnt");
+        text->setScale(0.5);
+        text->setPosition({178, 120});
+        optionsMenu->addChild(settingsButton);
+        optionsMenu->addChild(text);
+    }
+
+    void openSettings(CCObject* obj) {
+        geode::openSettingsPopup(Mod::get(), false);
+    }
+};
+
+using namespace keybinds;
 
 class $modify (PlayLayer) {
     void setupHasCompleted() {
@@ -65,34 +108,71 @@ class $modify (PlayLayer) {
                 speed = 0.3;
             createRGB(enable, speed, overlay);
         }
-    }
-};
 
-class $modify (dimSettings, PauseLayer) {
-    void onSettings(CCObject* sender) {
-        PauseLayer::onSettings(sender);
-        if (!Mod::get()->getSettingValue<bool>("show-opacity-button")) return;
-        auto optionsLayer = typeinfo_cast<GameOptionsLayer*>(CCDirector::get()->getRunningScene()->getChildren()->lastObject());
-        if (!optionsLayer) return;
-        auto optionsMenu = getChildOfType<CCMenu>(optionsLayer->m_mainLayer, 1);
-        auto settingsSprite = CircleButtonSprite::createWithSpriteFrameName(
-            "geode.loader/settings.png", 
-            1.f, 
-             CircleBaseColor::DarkPurple, 
-             CircleBaseSize::Small
-        );
-        settingsSprite->setScale(0.75);
-        auto settingsButton = CCMenuItemSpriteExtra::create(settingsSprite, this, menu_selector(dimSettings::openSettings));
-        settingsButton->setPosition({146, 119});
-        auto text = CCLabelBMFont::create("Dim", "bigFont.fnt");
-        text->setScale(0.5);
-        text->setPosition({178, 120});
-        optionsMenu->addChild(settingsButton);
-        optionsMenu->addChild(text);
+        auto label = CCLabelBMFont::create("Opacity: ", "bigFont.fnt");
+        label->setID("opacityLabel"_spr);
+        label->setOpacity(0);
+        label->setPosition({4, 310});
+        label->setScale(0.3);
+        label->setAnchorPoint({0, 0.5});
+        this->addChild(label, 1001);
     }
 
-    void openSettings(CCObject* obj) {
-        geode::openSettingsPopup(Mod::get());
+    bool init(GJGameLevel* level, bool useReplay, bool dontCreateObjects) {
+        this->template addEventListener<InvokeBindFilter>([=](InvokeBindEvent* event) {
+            if (event->isDown()) {
+                log::debug("KEY_O");
+                auto overlay = static_cast<CCLayerColor*>(PlayLayer::get()->getChildByID("dimOverlay"_spr));
+                if (Mod::get()->getSettingValue<bool>("enable-overlay")) 
+                    overlay->runAction(CCFadeTo::create(0.5f, 0));
+                else
+                    overlay->runAction(CCFadeTo::create(0.5f, Mod::get()->getSettingValue<int64_t>("set-opacity") * 2.55));
+                Mod::get()->setSettingValue<bool>("enable-overlay", !Mod::get()->getSettingValue<bool>("enable-overlay"));
+            }
+            return ListenerResult::Propagate;
+        }, "toggle-overlay"_spr);
+
+        this->template addEventListener<InvokeBindFilter>([=](InvokeBindEvent* event) {
+            if (event->isDown()) {
+                log::debug("KEY_P");
+                if (auto pl = PlayLayer::get()) {
+                auto overlay = static_cast<CCLayerColor*>(pl->getChildByID("dimOverlay"_spr));
+                auto color = Mod::get()->getSettingValue<ccColor3B>("overlay-color");
+                Mod::get()->setSettingValue<bool>("rgb", !Mod::get()->getSettingValue<bool>("rgb"));
+                }
+            }
+            return ListenerResult::Propagate;
+        }, "toggle-rgb"_spr);
+
+        this->template addEventListener<InvokeBindFilter>([=](InvokeBindEvent* event) {
+            if (event->isDown()) {
+                log::debug("KEY_Add");
+                if (auto enable = Mod::get()->getSettingValue<bool>("enable-overlay")) {
+                    auto overlay = static_cast<CCLayerColor*>(PlayLayer::get()->getChildByID("dimOverlay"_spr));
+                    auto opacity = Mod::get()->getSettingValue<int64_t>("set-opacity");
+                    if (opacity != 100) opacity += 1;  
+                    Mod::get()->setSettingValue<int64_t>("set-opacity", opacity);
+                    updateOpacityLabel();
+                }     
+            }
+            return ListenerResult::Propagate;
+        }, "increase-opacity"_spr);
+
+        this->template addEventListener<InvokeBindFilter>([=](InvokeBindEvent* event) {
+            if (event->isDown()) {
+                log::debug("KEY_Subtract");
+                if (auto enable = Mod::get()->getSettingValue<bool>("enable-overlay")) {
+                    auto overlay = static_cast<CCLayerColor*>(PlayLayer::get()->getChildByID("dimOverlay"_spr));
+                    auto opacity = Mod::get()->getSettingValue<int64_t>("set-opacity");
+                    if (opacity != 0) opacity -= 1;  
+                    Mod::get()->setSettingValue<int64_t>("set-opacity", opacity);
+                    updateOpacityLabel();
+                }        
+            }
+            return ListenerResult::Propagate;
+        }, "decrease-opacity"_spr);
+
+        return PlayLayer::init(level, useReplay, dontCreateObjects);
     }
 };
 
@@ -110,8 +190,9 @@ $execute {
                 }
             }
         }
-   });
-   geode::listenForSettingChanges("overlay-color", +[](ccColor3B value) {
+    });
+
+    geode::listenForSettingChanges("overlay-color", +[](ccColor3B value) {
         if (auto pl = PlayLayer::get()) {
             auto overlay = static_cast<CCLayerColor*>(pl->getChildByID("dimOverlay"_spr));
             float dimFactor = getDimFactor();
@@ -120,8 +201,9 @@ $execute {
             value.b *= dimFactor;
             overlay->setColor(value);
         }
-   });
-   geode::listenForSettingChanges("enable-overlay", +[](bool value) {
+    });
+
+    geode::listenForSettingChanges("enable-overlay", +[](bool value) {
         if (auto pl = PlayLayer::get()) {
             auto overlay = static_cast<CCLayerColor*>(pl->getChildByID("dimOverlay"_spr));
             if (value == true) 
@@ -129,8 +211,9 @@ $execute {
             else
                 overlay->setOpacity(0);
         }
-   });
-   geode::listenForSettingChanges("rgb", +[](bool value) {
+    });
+
+    geode::listenForSettingChanges("rgb", +[](bool value) {
         if (auto pl = PlayLayer::get()) {
             auto overlay = static_cast<CCLayerColor*>(pl->getChildByID("dimOverlay"_spr));
             float speed = abs(Mod::get()->getSettingValue<double>("rgb-speed") - 10);
@@ -138,9 +221,10 @@ $execute {
                 speed = 0.3;
             createRGB(value, speed, overlay);
         }
-   });
-   geode::listenForSettingChanges("rgb-speed", +[](double  value) {
-    if (auto pl = PlayLayer::get()) {
+    });
+
+    geode::listenForSettingChanges("rgb-speed", +[](double  value) {
+        if (auto pl = PlayLayer::get()) {
             auto overlay = static_cast<CCLayerColor*>(pl->getChildByID("dimOverlay"_spr));
             auto enable = Mod::get()->getSettingValue<bool>("rgb");
             float speed = (abs(value - 10));
@@ -148,7 +232,46 @@ $execute {
                 speed = 0.3;
             if (enable) createRGB(enable, speed, overlay);
         }
+    });
+
+    BindManager* bm = BindManager::get();
+
+    bm->registerBindable({
+        "toggle-overlay"_spr,
+        "Toggle Overlay",
+        "Toggle overlay visibility",
+        {Keybind::create(KEY_O, Modifier::Alt)},
+        "Dim Level"
+    });
+
+    bm->registerBindable({
+        "toggle-rgb"_spr,
+        "Toggle RGB",
+        "Toggles the RGB setting.",
+        {Keybind::create(KEY_P, Modifier::Alt)},
+        "Dim Level"
+    });
+
+    bm->registerBindable({
+        "increase-opacity"_spr,
+        "Increase Opacity",
+        "Increases the opacity of the overlay",
+        {Keybind::create(KEY_I, Modifier::Alt)},
+        "Dim Level"
    });
+
+    bm->registerBindable({
+        "decrease-opacity"_spr,
+        "Decrease Opacity",
+        "Decreases the opacity of the overlay",
+        {Keybind::create(KEY_U, Modifier::Alt)},
+        "Dim Level"
+   });
+
+    bm->setRepeatOptionsFor("toggle-overlay"_spr, { false, 0, 0 });
+    bm->setRepeatOptionsFor("toggle-rgb"_spr, { false, 0, 0 });
+    bm->setRepeatOptionsFor("increase-opacity"_spr, { true, 20, 450 });
+    bm->setRepeatOptionsFor("decrease-opacity"_spr, { true, 20, 450 });
 };
 
 
