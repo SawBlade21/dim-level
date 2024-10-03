@@ -1,5 +1,5 @@
 {
-	"geode": "3.7.1",
+	"geode": "3.8.1",
 	"gd": {
 		"win": "2.206",
 		"android": "2.206",
@@ -8,7 +8,7 @@
 	"id": "sawblade.dim_mode",
 	"repository": "https://github.com/SawBlade21/dim-level",
 	"name": "Dim Level",
-	"version": "v1.0.1",
+	"version": "v1.0.2",
 	"developer": "Sawblade",
 	"description": "Dims the screen while playing a level.",
 	"settings": {
@@ -19,7 +19,7 @@
 			"default": true
 		},
 		"set-opacity": {
-			"name": "Set Opacity (%)",
+			"name": "Opacity (%)",
 			"description": "Sets the dimness of the screen.",
 			"type": "int",
 			"default": 50,
@@ -36,7 +36,7 @@
 		"default": "#000000"
 		},
 		"rgb": {
-			"name": "rgb",
+			"name": "RGB",
 			"type": "bool",
 			"description": "Makes the overlay RGB.",
 			"default": false
@@ -68,9 +68,14 @@
 	"dependencies": [
 		{
             "id": "geode.node-ids",
-            "version": ">=v1.14.1",
+            "version": ">=v1.15.0",
             "importance": "required"
-        }
+        },
+		{
+			"id": "geode.custom-keybinds",
+			"version": ">=1.9.0",
+			"importance": "required"
+		}
     ],
 	"tags": [
 		"gameplay",
