@@ -1,14 +1,14 @@
 {
-	"geode": "3.8.1",
+	"geode": "4.0.1",
 	"gd": {
-		"win": "2.206",
-		"android": "2.206",
-		"mac": "2.206"
+		"win": "2.2074",
+		"android": "2.2074",
+		"mac": "2.2074"
 	},
 	"id": "sawblade.dim_mode",
 	"repository": "https://github.com/SawBlade21/dim-level",
 	"name": "Dim Level",
-	"version": "v1.0.2",
+	"version": "v1.0.3",
 	"developer": "Sawblade",
 	"description": "Dims the screen while playing a level.",
 	"settings": {

@@ -3,7 +3,7 @@
 #include <Geode/modify/PauseLayer.hpp>
 #include <Geode/ui/GeodeUI.hpp>
 #include <Geode/ui/BasedButtonSprite.hpp>
-#include <Geode/loader/SettingEvent.hpp>
+//#include <Geode/loader/SettingEvent.hpp>
 #include <geode.custom-keybinds/include/Keybinds.hpp>
 
 using namespace geode::prelude;
@@ -65,7 +65,7 @@ class $modify (dimSettings, PauseLayer) {
         if (!Mod::get()->getSettingValue<bool>("show-opacity-button")) return;
         auto optionsLayer = typeinfo_cast<GameOptionsLayer*>(CCDirector::get()->getRunningScene()->getChildren()->lastObject());
         if (!optionsLayer) return;
-        auto optionsMenu = getChildOfType<CCMenu>(optionsLayer->m_mainLayer, 1);
+        auto optionsMenu = optionsLayer->m_mainLayer->getChildByType<CCMenu>(1);
         auto settingsSprite = CircleButtonSprite::createWithSpriteFrameName(
             "geode.loader/settings.png", 
             1.f, 
