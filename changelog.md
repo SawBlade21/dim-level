@@ -1,3 +1,6 @@
+# 1.0.4
+* Added mac support
+
 # 1.0.3
 * Updated to GD 2.2074
 
