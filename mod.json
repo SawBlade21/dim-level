@@ -1,14 +1,16 @@
 {
-	"geode": "4.0.1",
+	"geode": "4.5.0",
 	"gd": {
 		"win": "2.2074",
 		"android": "2.2074",
 		"mac": "2.2074"
 	},
 	"id": "sawblade.dim_mode",
-	"repository": "https://github.com/SawBlade21/dim-level",
+	"links": {
+		"source": "https://github.com/SawBlade21/dim-level"
+	},
 	"name": "Dim Level",
-	"version": "v1.0.3",
+	"version": "v1.0.4",
 	"developer": "Sawblade",
 	"description": "Dims the screen while playing a level.",
 	"settings": {
@@ -65,18 +67,10 @@
 			"default": true
 		}
 	},
-	"dependencies": [
-		{
-            "id": "geode.node-ids",
-            "version": ">=v1.15.0",
-            "importance": "required"
-        },
-		{
-			"id": "geode.custom-keybinds",
-			"version": ">=1.9.0",
-			"importance": "required"
-		}
-    ],
+	"dependencies": {
+		"geode.node-ids": ">=v1.20.1",
+		"geode.custom-keybinds": ">=1.10.4"
+ },
 	"tags": [
 		"gameplay",
 		"offline",
