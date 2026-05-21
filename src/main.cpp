@@ -3,21 +3,23 @@
 #include <Geode/modify/PauseLayer.hpp>
 #include <Geode/ui/GeodeUI.hpp>
 #include <Geode/ui/BasedButtonSprite.hpp>
-//#include <Geode/loader/SettingEvent.hpp>
-#include <geode.custom-keybinds/include/Keybinds.hpp>
+#include <Geode/loader/SettingV3.hpp>
 
 using namespace geode::prelude;
 
 float getDimFactor() {
     float dimFactor = abs((Mod::get()->getSettingValue<int64_t>("set-opacity") / 100.f) - 1);
     dimFactor = static_cast<int>(dimFactor * 100.0f) / 100.0f;
+
     if (dimFactor == 0) 
         dimFactor = 0.01f;
+
     return dimFactor;
 }
 
 void createRGB(bool enable, float speed, CCLayerColor* overlay) {
     float dimFactor = getDimFactor();
+
     if (enable == true) {
         overlay->stopAllActions();
         auto redToOrange = CCTintTo::create(speed, 255 * dimFactor, 165 * dimFactor, 0); 
@@ -60,26 +62,23 @@ void updateOpacityLabel() {
 }
 
 class $modify (dimSettings, PauseLayer) {
-    void onSettings(CCObject* sender) {
-        PauseLayer::onSettings(sender);
-        if (!Mod::get()->getSettingValue<bool>("show-opacity-button")) return;
-        auto optionsLayer = typeinfo_cast<GameOptionsLayer*>(CCDirector::get()->getRunningScene()->getChildren()->lastObject());
-        if (!optionsLayer) return;
-        auto optionsMenu = optionsLayer->m_mainLayer->getChildByType<CCMenu>(1);
-        auto settingsSprite = CircleButtonSprite::createWithSpriteFrameName(
-            "geode.loader/settings.png", 
-            1.f, 
-            CircleBaseColor::DarkPurple, 
-            CircleBaseSize::Small
-        );
-        settingsSprite->setScale(0.75);
-        auto settingsButton = CCMenuItemSpriteExtra::create(settingsSprite, this, menu_selector(dimSettings::openSettings));
-        settingsButton->setPosition({146, 119});
-        auto text = CCLabelBMFont::create("Dim", "bigFont.fnt");
-        text->setScale(0.5);
-        text->setPosition({178, 120});
-        optionsMenu->addChild(settingsButton);
-        optionsMenu->addChild(text);
+    void customSetup() {
+        PauseLayer::customSetup();
+
+        if (!Mod::get()->getSettingValue<bool>("show-opacity-button")) 
+            return;
+
+        auto menu = static_cast<CCMenu*>(this->getChildByID("right-button-menu"));
+
+        auto btnSprite = CCSprite::create("dim_btn.png"_spr);
+        btnSprite->setScale(0.66);
+
+        auto settingsButton = CCMenuItemSpriteExtra::create(btnSprite, this, menu_selector(dimSettings::openSettings));
+        settingsButton->setPosition({32, -73});
+        settingsButton->setID("dimSettings"_spr);
+
+        menu->addChild(settingsButton);
+        menu->updateLayout();
     }
 
     void openSettings(CCObject* obj) {
@@ -88,25 +87,31 @@ class $modify (dimSettings, PauseLayer) {
     }
 };
 
-using namespace keybinds;
-
 class $modify (PlayLayer) {
     void setupHasCompleted() {
         PlayLayer::setupHasCompleted();
         cocos2d::CCSize screenSize = CCDirector::sharedDirector()->getWinSize();
         auto opacity = (Mod::get()->getSettingValue<int64_t>("set-opacity") * 2.55);
-        if (!Mod::get()->getSettingValue<bool>("enable-overlay")) opacity = 0;
+
+        if (!Mod::get()->getSettingValue<bool>("enable-overlay")) 
+            opacity = 0;
+
         auto color = Mod::get()->getSettingValue<ccColor3B>("overlay-color");
         float dimFactor = getDimFactor();
+
         cocos2d::CCLayerColor* overlay = CCLayerColor::create(ccc4(color.r * dimFactor, color.g * dimFactor, color.b * dimFactor, opacity), screenSize.width, screenSize.height);
         overlay->setID("dimOverlay"_spr);
         this->addChild(overlay, 1000);
+
         if (auto enable = Mod::get()->getSettingValue<bool>("rgb")) {
             float speed = abs(Mod::get()->getSettingValue<double>("rgb-speed") - 10);
+
             if (speed < 0.3) 
                 speed = 0.3;
+
             createRGB(enable, speed, overlay);
         }
+
         auto label = CCLabelBMFont::create("Opacity: ", "bigFont.fnt");
         label->setID("opacityLabel"_spr);
         label->setOpacity(0);
@@ -117,76 +122,95 @@ class $modify (PlayLayer) {
     }
 
     bool init(GJGameLevel* level, bool useReplay, bool dontCreateObjects) {
-        this->template addEventListener<InvokeBindFilter>([=](InvokeBindEvent* event) {
-            if (event->isDown() && !CCDirector::get()->getRunningScene()->getChildByID("dimSettings"_spr)) {
+        this->addEventListener(
+            KeybindSettingPressedEventV3(Mod::get(), "toggle-overlay"),
+            [this](Keybind const& keybind, bool down, bool repeat, double timestamp) {
+                if (down && !repeat && !CCDirector::get()->getRunningScene()->getChildByID("dimSettings"_spr)) {
+                    auto overlay = static_cast<CCLayerColor*>(PlayLayer::get()->getChildByID("dimOverlay"_spr));
 
-                auto overlay = static_cast<CCLayerColor*>(PlayLayer::get()->getChildByID("dimOverlay"_spr));
-                if (Mod::get()->getSettingValue<bool>("enable-overlay")) 
-                    overlay->runAction(CCFadeTo::create(0.5f, 0));
-                else
-                    overlay->runAction(CCFadeTo::create(0.5f, Mod::get()->getSettingValue<int64_t>("set-opacity") * 2.55));
-                Mod::get()->setSettingValue<bool>("enable-overlay", !Mod::get()->getSettingValue<bool>("enable-overlay"));
-            }
-            return ListenerResult::Propagate;
-        }, "toggle-overlay"_spr);
+                    if (Mod::get()->getSettingValue<bool>("enable-overlay")) 
+                        overlay->runAction(CCFadeTo::create(0.5f, 0));
+                    else
+                        overlay->runAction(CCFadeTo::create(0.5f, Mod::get()->getSettingValue<int64_t>("set-opacity") * 2.55));
 
-        this->template addEventListener<InvokeBindFilter>([=](InvokeBindEvent* event) {
-            if (event->isDown() && !CCDirector::get()->getRunningScene()->getChildByID("dimSettings"_spr)) {
-                if (auto pl = PlayLayer::get()) {
-                auto overlay = static_cast<CCLayerColor*>(pl->getChildByID("dimOverlay"_spr));
-                auto color = Mod::get()->getSettingValue<ccColor3B>("overlay-color");
-                Mod::get()->setSettingValue<bool>("rgb", !Mod::get()->getSettingValue<bool>("rgb"));
+                    Mod::get()->setSettingValue<bool>("enable-overlay", !Mod::get()->getSettingValue<bool>("enable-overlay"));
                 }
             }
-            return ListenerResult::Propagate;
-        }, "toggle-rgb"_spr);
+        );
 
-        this->template addEventListener<InvokeBindFilter>([=](InvokeBindEvent* event) {
-            if (event->isDown() && !CCDirector::get()->getRunningScene()->getChildByID("dimSettings"_spr)) {
-                if (auto enable = Mod::get()->getSettingValue<bool>("enable-overlay")) {
-                    auto overlay = static_cast<CCLayerColor*>(PlayLayer::get()->getChildByID("dimOverlay"_spr));
-                    auto opacity = Mod::get()->getSettingValue<int64_t>("set-opacity");
-                    if (opacity != 100) opacity += 1;  
-                    Mod::get()->setSettingValue<int64_t>("set-opacity", opacity);
-                    updateOpacityLabel();
-                }     
-            }
-            return ListenerResult::Propagate;
-        }, "increase-opacity"_spr);
+        this->addEventListener(
+            KeybindSettingPressedEventV3(Mod::get(), "toggle-rgb"),
+            [this](Keybind const& keybind, bool down, bool repeat, double timestamp) {
+                if (down && !repeat && !CCDirector::get()->getRunningScene()->getChildByID("dimSettings"_spr)) {
+                    if (auto pl = PlayLayer::get()) {
+                        auto overlay = static_cast<CCLayerColor*>(pl->getChildByID("dimOverlay"_spr));
+                        auto color = Mod::get()->getSettingValue<ccColor3B>("overlay-color");
 
-        this->template addEventListener<InvokeBindFilter>([=](InvokeBindEvent* event) {
-            if (event->isDown() && !CCDirector::get()->getRunningScene()->getChildByID("dimSettings"_spr)) {
-                if (auto enable = Mod::get()->getSettingValue<bool>("enable-overlay")) {
-                    auto overlay = static_cast<CCLayerColor*>(PlayLayer::get()->getChildByID("dimOverlay"_spr));
-                    auto opacity = Mod::get()->getSettingValue<int64_t>("set-opacity");
-                    if (opacity != 0) opacity -= 1;  
-                    Mod::get()->setSettingValue<int64_t>("set-opacity", opacity);
-                    updateOpacityLabel();
-                }        
+                        Mod::get()->setSettingValue<bool>("rgb", !Mod::get()->getSettingValue<bool>("rgb"));
+                    }
+                }
             }
-            return ListenerResult::Propagate;
-        }, "decrease-opacity"_spr);
+        );
+
+        this->addEventListener(
+            KeybindSettingPressedEventV3(Mod::get(), "increase-opacity"),
+            [this](Keybind const& keybind, bool down, bool repeat, double timestamp) {
+                if (down && !repeat && !CCDirector::get()->getRunningScene()->getChildByID("dimSettings"_spr)) {
+                    if (auto enable = Mod::get()->getSettingValue<bool>("enable-overlay")) {
+                        auto overlay = static_cast<CCLayerColor*>(PlayLayer::get()->getChildByID("dimOverlay"_spr));
+                        auto opacity = Mod::get()->getSettingValue<int64_t>("set-opacity");
+
+                        if (opacity != 100) 
+                            opacity += 1;  
+
+                        Mod::get()->setSettingValue<int64_t>("set-opacity", opacity);
+                        updateOpacityLabel();
+                    }     
+                }
+            }
+        );
+
+        this->addEventListener(
+            KeybindSettingPressedEventV3(Mod::get(), "decrease opacity"),
+            [this](Keybind const& keybind, bool down, bool repeat, double timestamp) {
+                if (down && !repeat && !CCDirector::get()->getRunningScene()->getChildByID("dimSettings"_spr)) {
+                    if (auto enable = Mod::get()->getSettingValue<bool>("enable-overlay")) {
+                        auto overlay = static_cast<CCLayerColor*>(PlayLayer::get()->getChildByID("dimOverlay"_spr));
+                        auto opacity = Mod::get()->getSettingValue<int64_t>("set-opacity");
+
+                        if (opacity != 0) 
+                            opacity -= 1;  
+
+                        Mod::get()->setSettingValue<int64_t>("set-opacity", opacity);
+                        updateOpacityLabel();
+                    }        
+                }
+            }
+        );
 
         return PlayLayer::init(level, useReplay, dontCreateObjects);
     }
 };
 
-$execute {
-    geode::listenForSettingChanges("set-opacity", +[](int64_t  value) {
+$on_game(Loaded) {
+    geode::listenForSettingChanges<int>("set-opacity", [](int  value) {
         auto pl = PlayLayer::get();
         if (pl && Mod::get()->getSettingValue<bool>("enable-overlay")) {
             auto overlay = static_cast<CCLayerColor*>(pl->getChildByID("dimOverlay"_spr));
             overlay->setOpacity(value * 2.55);
+
             if (auto enable = Mod::get()->getSettingValue<bool>("rgb")) {
                 float speed = abs(Mod::get()->getSettingValue<double>("rgb-speed") - 10);
+
                 if (speed < 0.3) 
                     speed = 0.3;
+
                 createRGB(enable, speed, overlay);
             }
         }
     });
 
-    geode::listenForSettingChanges("overlay-color", +[](ccColor3B value) {
+    geode::listenForSettingChanges<ccColor3B>("overlay-color", [](ccColor3B value) {
         if (auto pl = PlayLayer::get()) {
             auto overlay = static_cast<CCLayerColor*>(pl->getChildByID("dimOverlay"_spr));
             float dimFactor = getDimFactor();
@@ -197,9 +221,10 @@ $execute {
         }
     });
 
-    geode::listenForSettingChanges("enable-overlay", +[](bool value) {
+    geode::listenForSettingChanges<bool>("enable-overlay", [](bool value) {
         if (auto pl = PlayLayer::get()) {
             auto overlay = static_cast<CCLayerColor*>(pl->getChildByID("dimOverlay"_spr));
+
             if (value == true) 
                 overlay->setOpacity(Mod::get()->getSettingValue<int64_t>("set-opacity") * 2.55);
             else
@@ -207,63 +232,29 @@ $execute {
         }
     });
 
-    geode::listenForSettingChanges("rgb", +[](bool value) {
+    geode::listenForSettingChanges<bool>("rgb", [](bool value) {
         if (auto pl = PlayLayer::get()) {
             auto overlay = static_cast<CCLayerColor*>(pl->getChildByID("dimOverlay"_spr));
             float speed = abs(Mod::get()->getSettingValue<double>("rgb-speed") - 10);
+
             if (speed < 0.3) 
                 speed = 0.3;
+
             createRGB(value, speed, overlay);
         }
     });
 
-    geode::listenForSettingChanges("rgb-speed", +[](double  value) {
+    geode::listenForSettingChanges<int>("rgb-speed", [](double  value) {
         if (auto pl = PlayLayer::get()) {
             auto overlay = static_cast<CCLayerColor*>(pl->getChildByID("dimOverlay"_spr));
             auto enable = Mod::get()->getSettingValue<bool>("rgb");
             float speed = (abs(value - 10));
+
             if (speed < 0.3) 
                 speed = 0.3;
-            if (enable) createRGB(enable, speed, overlay);
+
+            if (enable) 
+                createRGB(enable, speed, overlay);
         }
     });
-
-    BindManager* bm = BindManager::get();
-
-    bm->registerBindable({
-        "toggle-overlay"_spr,
-        "Toggle Overlay",
-        "Toggles overlay visibility",
-        {Keybind::create(KEY_O, Modifier::Alt)},
-        "Dim Level"
-    });
-
-    bm->registerBindable({
-        "toggle-rgb"_spr,
-        "Toggle RGB",
-        "Toggles the RGB setting.",
-        {Keybind::create(KEY_P, Modifier::Alt)},
-        "Dim Level"
-    });
-
-    bm->registerBindable({
-        "increase-opacity"_spr,
-        "Increase Opacity",
-        "Increases the opacity of the overlay",
-        {Keybind::create(KEY_I, Modifier::Alt)},
-        "Dim Level"
-   });
-
-    bm->registerBindable({
-        "decrease-opacity"_spr,
-        "Decrease Opacity",
-        "Decreases the opacity of the overlay",
-        {Keybind::create(KEY_U, Modifier::Alt)},
-        "Dim Level"
-   });
-
-    bm->setRepeatOptionsFor("toggle-overlay"_spr, { false, 0, 0 });
-    bm->setRepeatOptionsFor("toggle-rgb"_spr, { false, 0, 0 });
-    bm->setRepeatOptionsFor("increase-opacity"_spr, { true, 20, 450 });
-    bm->setRepeatOptionsFor("decrease-opacity"_spr, { true, 20, 450 });
-};
+}

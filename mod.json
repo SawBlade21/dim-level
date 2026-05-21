@@ -1,18 +1,23 @@
 {
-	"geode": "4.5.0",
+	"geode": "5.7.1",
 	"gd": {
-		"win": "2.2074",
-		"android": "2.2074",
-		"mac": "2.2074"
+		"win": "2.2081",
+		"android": "2.2081",
+		"mac": "2.2081"
 	},
 	"id": "sawblade.dim_mode",
 	"links": {
 		"source": "https://github.com/SawBlade21/dim-level"
 	},
 	"name": "Dim Level",
-	"version": "v1.0.4",
+	"version": "v1.0.5",
 	"developer": "Sawblade",
 	"description": "Dims the screen while playing a level.",
+	"resources": {
+		"sprites": [
+				"resources/dim_btn.png"
+			]
+	},
 	"settings": {
 		"enable-overlay": {
 			"name": "Enable Dim Overlay",
@@ -62,20 +67,39 @@
 		},
 		"show-opacity-button": {
 			"name": "Show Settings Button",
-			"description": "Shows the mod settings button in the pause menu settings.",
+			"description": "Shows the mod settings button in the pause menu.",
 			"type": "bool",
 			"default": true
+		},
+		"toggle-overlay": {
+			"type": "keybind",
+			"name": "Toggle Overlay",
+			"description": "Toggles overlay visibility",
+			"default": "Alt+O"
+		},
+		"toggle-rgb": {
+			"type": "keybind",
+			"name": "Toggle RGB",
+			"description": "Toggles the RGB setting",
+			"default": "Alt+P"
+		},
+		"increase-opacity": {
+			"type": "keybind",
+			"name": "Increase Opacity",
+			"description": "Increases the opacity of the overlay",
+			"default": "Alt+I"
+		},
+		"decrease-opacity": {
+			"type": "keybind",
+			"name": "Decrease Opacity",
+			"description": "Decreases the opacity of the overlay",
+			"default": "Alt+U"
 		}
 	},
 	"dependencies": {
 		"geode.node-ids": {
-			"version": ">=v1.20.1",
-			"importance": "required"
-		},
-		"geode.custom-keybinds": {
-			"version": ">=1.10.4",
-			"importance": "required"
-		} 
+			"version": ">=v1.23.3"
+		}
 	},
 	"tags": [
 		"gameplay",

@@ -1,3 +1,7 @@
+# 1.0.5
+* Updated mod to GD 2.2081
+* Moved settings button to pause menu
+
 # 1.0.4
 * Added mac support
 
